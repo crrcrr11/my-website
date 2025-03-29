@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语单词速记系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #3a7bd5;
+            margin: 20px 0;
+            text-align: center;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .progress-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(to right, #00d2ff, #3a7bd5);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: white;
+        }
+        
+        .card-front {
+            background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%);
+            color: white;
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+            color: white;
+            transform: rotateY(180deg);
+        }
+        
+        .word {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .pronunciation {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.8);
+            font-style: italic;
+        }
+        
+        .meaning {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .example {
+            font-size: 1rem;
+            text-align: center;
+            font-style: italic;
+            opacity: 0.9;
+            max-width: 80%;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-know {
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+            color: white;
+        }
+        
+        .btn-dont-know {
+            background: linear-gradient(135deg, #F44336 0%, #FF9800 100%);
+            color: white;
+        }
+        
+        .btn-next {
+            background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%);
+            color: white;
+            display: none;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .stats {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3a7bd5;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 5px;
+        }
+        
+        .completed {
+            display: none;
+            text-align: center;
+            margin-top: 50px;
+        }
+        
+        .completed h2 {
+            color: #3a7bd5;
+            margin-bottom: 20px;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <h1>英语单词速记系统</h1>
+    
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <div class="progress-text">
+            <span id="current-count">0</span>
+            <span id="total-count">0</span>
+        </div>
+    </div>
+    
+    <div class="card-container">
+        <div class="card" id="card">
+            <div class="card-face card-front">
+                <div class="word" id="word">Word</div>
+                <div class="pronunciation" id="pronunciation">/wɜːrd/</div>
+            </div>
+            <div class="card-face card-back">
+                <div class="meaning" id="meaning">意思</div>
+                <div class="example" id="example">Example sentence using this word.</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="btn btn-know" id="know-btn">我认识</button>
+        <button class="btn btn-dont-know" id="dont-know-btn">不认识</button>
+        <button class="btn btn-next" id="next-btn">下一个</button>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-value" id="known-count">0</div>
+            <div class="stat-label">已掌握</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="learning-count">0</div>
+            <div class="stat-label">学习中</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="mastery-rate">0%</div>
+            <div class="stat-label">掌握率</div>
+        </div>
+    </div>
+    
+    <div class="completed" id="completed">
+        <h2>恭喜！你已完成本轮学习！</h2>
+        <p>你掌握了 <span id="final-known">0</span> 个单词，掌握率为 <span id="final-rate">0%</span></p>
+        <button class="restart-btn" id="restart-btn">重新开始</button>
+    </div>
+    
+    <div class="celebration" id="celebration"></div>
+    
+    <script>
+        // 单词数据库
+        const wordDatabase = [
+            { word: "apple", pronunciation: "/ˈæp.əl/", meaning: "苹果", example: "I eat an apple every day." },
+            { word: "banana", pronunciation: "/bəˈnæn.ə/", meaning: "香蕉", example: "Monkeys love bananas." },
+            { word: "computer", pronunciation: "/kəmˈpjuː.t̬ɚ/", meaning: "计算机", example: "I use my computer for work." },
+            { word: "dictionary", pronunciation: "/ˈdɪk.ʃən.er.i/", meaning: "字典", example: "Look up the word in the dictionary." },
+            { word: "elephant", pronunciation: "/ˈel.ɪ.fənt/", meaning: "大象", example: "The elephant is the largest land animal." },
+            { word: "flower", pronunciation: "/ˈflaʊ.ɚ/", meaning: "花", example: "She received a bouquet of flowers." },
+            { word: "garden", pronunciation: "/ˈɡɑːr.dən/", meaning: "花园", example: "We grow vegetables in our garden." },
+            { word: "hospital", pronunciation: "/ˈhɑː.spɪ.t̬əl/", meaning: "医院", example: "He works at the local hospital." },
+            { word: "internet", pronunciation: "/ˈɪn.t̬ɚ.net/", meaning: "互联网", example: "I found the information on the internet." },
+            { word: "journey", pronunciation: "/ˈdʒɝː.ni/", meaning: "旅程", example: "The journey took three hours." },
+            { word: "kitchen", pronunciation: "/ˈkɪtʃ.ən/", meaning: "厨房", example: "She is cooking in the kitchen." },
+            { word: "language", pronunciation: "/ˈlæŋ.ɡwɪdʒ/", meaning: "语言", example: "English is a global language." },
+            { word: "mountain", pronunciation: "/ˈmaʊn.tən/", meaning: "山", example: "We climbed the mountain last summer." },
+            { word: "notebook", pronunciation: "/ˈnoʊt.bʊk/", meaning: "笔记本", example: "I write my notes in a notebook." },
+            { word: "orange", pronunciation: "/ˈɔːr.ɪndʒ/", meaning: "橙子", example: "Orange juice is my favorite." }
+        ];
+        
+        // 应用状态
+        const appState = {
+            currentIndex: 0,
+            knownWords: [],
+            learningWords: [],
+            isFlipped: false,
+            currentWord: null,
+            shuffledWords: []
+        };
+        
+        // DOM元素
+        const card = document.getElementById('card');
+        const wordElement = document.getElementById('word');
+        const pronunciationElement = document.getElementById('pronunciation');
+        const meaningElement = document.getElementById('meaning');
+        const exampleElement = document.getElementById('example');
+        const knowBtn = document.getElementById('know-btn');
+        const dontKnowBtn = document.getElementById('dont-know-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressElement = document.getElementById('progress');
+        const currentCountElement = document.getElementById('current-count');
+        const totalCountElement = document.getElementById('total-count');
+        const knownCountElement = document.getElementById('known-count');
+        const learningCountElement = document.getElementById('learning-count');
+        const masteryRateElement = document.getElementById('mastery-rate');
+        const celebrationElement = document.getElementById('celebration');
+        const completedElement = document.getElementById('completed');
+        const finalKnownElement = document.getElementById('final-known');
+        const finalRateElement = document.getElementById('final-rate');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // 初始化应用
+        function initApp() {
+            // 重置状态
+            appState.currentIndex = 0;
+            appState.knownWords = [];
+            appState.learningWords = [];
+            appState.isFlipped = false;
+            
+            // 打乱单词顺序
+            appState.shuffledWords = [...wordDatabase].sort(() => Math.random() - 0.5);
+            
+            // 更新UI
+            updateProgress();
+            updateStats();
+            loadCurrentWord();
+            
+            // 隐藏完成界面
+            completedElement.style.display = 'none';
+        }
+        
+        // 加载当前单词
+        function loadCurrentWord() {
+            if (appState.currentIndex >= appState.shuffledWords.length) {
+                showCompletion();
+                return;
+            }
+            
+            appState.currentWord = appState.shuffledWords[appState.currentIndex];
+            
+            wordElement.textContent = appState.currentWord.word;
+            pronunciationElement.textContent = appState.currentWord.pronunciation;
+            meaningElement.textContent = appState.currentWord.meaning;
+            exampleElement.textContent = appState.currentWord.example;
+            
+            // 重置卡片状态
+            if (appState.isFlipped) {
+                card.classList.add('flipped');
+            } else {
+                card.classList.remove('flipped');
+            }
+            
+            // 重置按钮状态
+            knowBtn.style.display = 'block';
+            dontKnowBtn.style.display = 'block';
+            nextBtn.style.display = 'none';
+        }
+        
+        // 翻转卡片
+        function flipCard() {
+            appState.isFlipped = !appState.isFlipped;
+            card.classList.toggle('flipped');
+        }
+        
+        // 处理"我认识"按钮点击
+        function handleKnow() {
+            if (!appState.isFlipped) {
+                flipCard();
+            }
+            
+            // 添加到已掌握列表
+            if (!appState.knownWords.includes(appState.currentWord.word)) {
+                appState.knownWords.push(appState.currentWord.word);
+            }
+            
+            // 从学习中移除
+            appState.learningWords = appState.learningWords.filter(word => word !== appState.currentWord.word);
+            
+            // 显示庆祝效果
+            createConfetti();
+            
+            // 更新UI
+            updateStats();
+            showNextButton();
+        }
+        
+        // 处理"不认识"按钮点击
+        function handleDontKnow() {
+            if (!appState.isFlipped) {
+                flipCard();
+            }
+            
+            // 添加到学习列表
+            if (!appState.learningWords.includes(appState.currentWord.word) && 
+                !appState.knownWords.includes(appState.currentWord.word)) {
+                appState.learningWords.push(appState.currentWord.word);
+            }
+            
+            // 更新UI
+            updateStats();
+            showNextButton();
+        }
+        
+        // 显示下一个按钮
+        function showNextButton() {
+            knowBtn.style.display = 'none';
+            dontKnowBtn.style.display = 'none';
+            nextBtn.style.display = 'block';
+        }
+        
+        // 处理"下一个"按钮点击
+        function handleNext() {
+            appState.currentIndex++;
+            appState.isFlipped = false;
+            updateProgress();
+            loadCurrentWord();
+        }
+        
+        // 更新进度条
+        function updateProgress() {
+            const progress = (appState.currentIndex / appState.shuffledWords.length) * 100;
+            progressElement.style.width = `${progress}%`;
+            currentCountElement.textContent = appState.currentIndex;
+            totalCountElement.textContent = appState.shuffledWords.length;
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            knownCountElement.textContent = appState.knownWords.length;
+            learningCountElement.textContent = appState.learningWords.length;
+            
+            const totalLearned = appState.knownWords.length + appState.learningWords.length;
+            const rate = totalLearned > 0 
+                ? Math.round((appState.knownWords.length / totalLearned) * 100) 
+                : 0;
+                
+            masteryRateElement.textContent = `${rate}%`;
+        }
+        
+        // 显示完成界面
+        function showCompletion() {
+            const total = appState.shuffledWords.length;
+            const known = appState.knownWords.length;
+            const rate = Math.round((known / total) * 100);
+            
+            finalKnownElement.textContent = known;
+            finalRateElement.textContent = `${rate}%`;
+            
+            completedElement.style.display = 'block';
+        }
+        
+        // 创建庆祝彩花
+        function createConfetti() {
+            celebrationElement.style.display = 'block';
+            celebrationElement.innerHTML = '';
+            
+            const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+            
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 10 + 5;
+                const left = Math.random() * 100;
+                const animationDuration = Math.random() * 3 + 2;
+                const delay = Math.random() * 2;
+                
+                confetti.style.backgroundColor = color;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.left = `${left}%`;
+                confetti.style.top = '0';
+                confetti.style.animation = `float ${animationDuration}s ease-in ${delay}s forwards`;
+                
+                // 随机形状
+                if (Math.random() > 0.5) {
+                    confetti.style.borderRadius = '50%';
+                } else {
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                }
+                
+                celebrationElement.appendChild(confetti);
+            }
+            
+            setTimeout(() => {
+                celebrationElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 事件监听
+        card.addEventListener('click', flipCard);
+        knowBtn.addEventListener('click', handleKnow);
+        dontKnowBtn.addEventListener('click', handleDontKnow);
+        nextBtn.addEventListener('click', handleNext);
+        restartBtn.addEventListener('click', initApp);
+        
+        // 初始化应用
+        initApp();
+    </script>
+</body>
+</html>

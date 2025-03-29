@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态深圳天气效果</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB, #1E90FF);
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .title {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+        
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+        
+        .cloud-large {
+            width: 120px;
+            height: 40px;
+            top: 100px;
+            animation: moveCloud 30s linear infinite;
+        }
+        
+        .cloud-medium {
+            width: 80px;
+            height: 30px;
+            top: 180px;
+            animation: moveCloud 40s linear infinite;
+        }
+        
+        .cloud-small {
+            width: 50px;
+            height: 20px;
+            top: 220px;
+            animation: moveCloud 50s linear infinite;
+        }
+        
+        @keyframes moveCloud {
+            0% {
+                transform: translateX(-150px);
+            }
+            100% {
+                transform: translateX(calc(100vw + 150px));
+            }
+        }
+        
+        .rain {
+            position: absolute;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.7);
+            animation: rainFall linear infinite;
+        }
+        
+        @keyframes rainFall {
+            0% {
+                transform: translateY(-50px);
+                opacity: 1;
+            }
+            70% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+        
+        .city-skyline {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(to top, #333, #555);
+            clip-path: polygon(
+                0% 100%, 0% 50%, 2% 60%, 4% 50%, 6% 70%, 
+                8% 40%, 10% 60%, 12% 30%, 14% 50%, 16% 30%, 
+                18% 40%, 20% 20%, 22% 30%, 24% 10%, 26% 20%, 
+                28% 0%, 30% 20%, 32% 10%, 34% 30%, 36% 20%, 
+                38% 40%, 40% 30%, 42% 50%, 44% 30%, 46% 70%, 
+                48% 40%, 50% 60%, 52% 30%, 54% 50%, 56% 30%, 
+                58% 40%, 60% 20%, 62% 30%, 64% 10%, 66% 20%, 
+                68% 0%, 70% 20%, 72% 10%, 74% 30%, 76% 20%, 
+                78% 40%, 80% 30%, 82% 50%, 84% 30%, 86% 70%, 
+                88% 40%, 90% 60%, 92% 30%, 94% 50%, 96% 30%, 
+                98% 40%, 100% 20%, 100% 100%
+            );
+        }
+        
+        .building {
+            position: absolute;
+            bottom: 150px;
+            background: #333;
+        }
+        
+        .building-1 {
+            left: 10%;
+            width: 40px;
+            height: 200px;
+        }
+        
+        .building-2 {
+            left: 20%;
+            width: 60px;
+            height: 300px;
+        }
+        
+        .building-3 {
+            left: 35%;
+            width: 80px;
+            height: 400px;
+        }
+        
+        .building-4 {
+            right: 35%;
+            width: 70px;
+            height: 350px;
+        }
+        
+        .building-5 {
+            right: 20%;
+            width: 50px;
+            height: 250px;
+        }
+        
+        .building-6 {
+            right: 10%;
+            width: 30px;
+            height: 150px;
+        }
+        
+        .window {
+            position: absolute;
+            background: yellow;
+            width: 8px;
+            height: 8px;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">深圳天气</h1>
+        
+        <div class="cloud cloud-large"></div>
+        <div class="cloud cloud-medium"></div>
+        <div class="cloud cloud-small"></div>
+        
+        <div class="city-skyline"></div>
+        
+        <div class="building building-1" id="building1"></div>
+        <div class="building building-2" id="building2"></div>
+        <div class="building building-3" id="building3"></div>
+        <div class="building building-4" id="building4"></div>
+        <div class="building building-5" id="building5"></div>
+        <div class="building building-6" id="building6"></div>
+        
+        <div class="info-panel">
+            <p>城市: 深圳</p>
+            <p>天气: 阵雨</p>
+            <p>温度: 25°C - 30°C</p>
+            <p>湿度: 85%</p>
+        </div>
+    </div>
+
+    <script>
+        // 创建云朵细节
+        function createCloudDetails() {
+            const clouds = document.querySelectorAll('.cloud');
+            
+            clouds.forEach(cloud => {
+                // 为每个云朵添加圆形部分
+                const size = parseInt(cloud.style.width || getComputedStyle(cloud).width);
+                
+                for (let i = 0; i < 5; i++) {
+                    const circle = document.createElement('div');
+                    circle.style.position = 'absolute';
+                    circle.style.backgroundColor = 'white';
+                    circle.style.borderRadius = '50%';
+                    circle.style.opacity = '0.8';
+                    
+                    const circleSize = size * (0.3 + Math.random() * 0.4);
+                    circle.style.width = `${circleSize}px`;
+                    circle.style.height = `${circleSize}px`;
+                    
+                    // 随机位置
+                    const left = Math.random() * size - circleSize/2;
+                    const top = -circleSize/2 + Math.random() * circleSize/2;
+                    
+                    circle.style.left = `${left}px`;
+                    circle.style.top = `${top}px`;
+                    
+                    cloud.appendChild(circle);
+                }
+            });
+        }
+        
+        // 创建建筑窗户
+        function createBuildingWindows() {
+            const buildings = [
+                document.getElementById('building1'),
+                document.getElementById('building2'),
+                document.getElementById('building3'),
+                document.getElementById('building4'),
+                document.getElementById('building5'),
+                document.getElementById('building6')
+            ];
+            
+            buildings.forEach(building => {
+                const height = parseInt(getComputedStyle(building).height);
+                const width = parseInt(getComputedStyle(building).width);
+                
+                const rows = Math.floor(height / 20);
+                const cols = Math.floor(width / 12);
+                
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        // 随机决定是否显示窗户
+                        if (Math.random() > 0.3) {
+                            const window = document.createElement('div');
+                            window.className = 'window';
+                            window.style.left = `${5 + col * 12}px`;
+                            window.style.top = `${10 + row * 20}px`;
+                            
+                            // 随机窗户亮度
+                            const brightness = 0.5 + Math.random() * 0.5;
+                            window.style.opacity = brightness.toString();
+                            
+                            building.appendChild(window);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 创建雨滴
+        function createRain() {
+            const container = document.querySelector('.container');
+            const rainCount = 100;
+            
+            for (let i = 0; i < rainCount; i++) {
+                const rain = document.createElement('div');
+                rain.className = 'rain';
+                
+                // 随机位置
+                const left = Math.random() * 100;
+                rain.style.left = `${left}%`;
+                
+                // 随机高度和动画持续时间
+                const height = 10 + Math.random() * 20;
+                rain.style.height = `${height}px`;
+                
+                const duration = 0.5 + Math.random() * 1.5;
+                rain.style.animationDuration = `${duration}s`;
+                
+                // 随机延迟
+                const delay = Math.random() * 2;
+                rain.style.animationDelay = `-${delay}s`;
+                
+                container.appendChild(rain);
+            }
+        }
+        
+        // 初始化所有元素
+        function init() {
+            createCloudDetails();
+            createBuildingWindows();
+            createRain();
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
