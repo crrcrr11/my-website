@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>十以内加减法练习</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            overflow: hidden;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 400px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        h1 {
+            color: #3a7bd5;
+            margin-bottom: 30px;
+        }
+        
+        .math-problem {
+            font-size: 36px;
+            margin: 20px 0;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .answer-input {
+            width: 100px;
+            height: 50px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        
+        .answer-input:focus {
+            border-color: #3a7bd5;
+            outline: none;
+            box-shadow: 0 0 10px rgba(58, 123, 213, 0.3);
+        }
+        
+        .btn {
+            background-color: #3a7bd5;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2c5fb3;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .feedback {
+            height: 30px;
+            margin: 15px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .correct {
+            color: #4CAF50;
+        }
+        
+        .incorrect {
+            color: #F44336;
+        }
+        
+        .score {
+            font-size: 18px;
+            margin-top: 20px;
+            color: #555;
+        }
+        
+        /* 动画元素 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+            z-index: 0;
+        }
+        
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(58, 123, 213, 0.1);
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(1000px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .shake {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>十以内加减法练习</h1>
+        
+        <div class="math-problem" id="problem">3 + 5 = ?</div>
+        
+        <input type="number" class="answer-input" id="answer" placeholder="答案">
+        
+        <div>
+            <button class="btn" id="check-btn">检查答案</button>
+            <button class="btn" id="new-btn">新题目</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="score" id="score">得分: 0 | 正确: 0 | 错误: 0</div>
+    </div>
+
+    <script>
+        // 游戏状态
+        const gameState = {
+            num1: 0,
+            num2: 0,
+            operator: '+',
+            correctAnswer: 0,
+            score: 0,
+            correct: 0,
+            wrong: 0
+        };
+        
+        // DOM元素
+        const problemElement = document.getElementById('problem');
+        const answerInput = document.getElementById('answer');
+        const checkBtn = document.getElementById('check-btn');
+        const newBtn = document.getElementById('new-btn');
+        const feedbackElement = document.getElementById('feedback');
+        const scoreElement = document.getElementById('score');
+        const container = document.querySelector('.container');
+        
+        // 初始化游戏
+        function initGame() {
+            generateProblem();
+            updateScore();
+            createBubbles();
+        }
+        
+        // 生成新题目
+        function generateProblem() {
+            gameState.num1 = Math.floor(Math.random() * 10) + 1;
+            gameState.num2 = Math.floor(Math.random() * 10) + 1;
+            gameState.operator = Math.random() > 0.5 ? '+' : '-';
+            
+            // 确保减法结果不为负数
+            if (gameState.operator === '-' && gameState.num1 < gameState.num2) {
+                [gameState.num1, gameState.num2] = [gameState.num2, gameState.num1];
+            }
+            
+            gameState.correctAnswer = gameState.operator === '+' 
+                ? gameState.num1 + gameState.num2 
+                : gameState.num1 - gameState.num2;
+            
+            problemElement.textContent = `${gameState.num1} ${gameState.operator} ${gameState.num2} = ?`;
+            answerInput.value = '';
+            feedbackElement.textContent = '';
+            feedbackElement.className = 'feedback';
+            answerInput.focus();
+        }
+        
+        // 检查答案
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value);
+            
+            if (isNaN(userAnswer)) {
+                feedbackElement.textContent = '请输入一个数字!';
+                feedbackElement.className = 'feedback incorrect';
+                answerInput.classList.add('shake');
+                setTimeout(() => answerInput.classList.remove('shake'), 500);
+                return;
+            }
+            
+            if (userAnswer === gameState.correctAnswer) {
+                feedbackElement.textContent = '正确! 太棒了!';
+                feedbackElement.className = 'feedback correct';
+                gameState.score += 10;
+                gameState.correct++;
+                createConfetti();
+            } else {
+                feedbackElement.textContent = `不对哦, 正确答案是 ${gameState.correctAnswer}`;
+                feedbackElement.className = 'feedback incorrect';
+                gameState.score = Math.max(0, gameState.score - 5);
+                gameState.wrong++;
+                answerInput.classList.add('shake');
+                setTimeout(() => answerInput.classList.remove('shake'), 500);
+            }
+            
+            updateScore();
+        }
+        
+        // 更新分数显示
+        function updateScore() {
+            scoreElement.textContent = `得分: ${gameState.score} | 正确: ${gameState.correct} | 错误: ${gameState.wrong}`;
+        }
+        
+        // 创建背景气泡
+        function createBubbles() {
+            for (let i = 0; i < 20; i++) {
+                createBubble();
+            }
+        }
+        
+        function createBubble() {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            
+            const size = Math.random() * 100 + 50;
+            const posX = Math.random() * window.innerWidth;
+            const duration = Math.random() * 20 + 10;
+            const delay = Math.random() * 5;
+            
+            bubble.style.width = `${size}px`;
+            bubble.style.height = `${size}px`;
+            bubble.style.left = `${posX}px`;
+            bubble.style.bottom = `-${size}px`;
+            bubble.style.animation = `float ${duration}s linear ${delay}s infinite`;
+            
+            document.body.appendChild(bubble);
+            
+            // 移除旧气泡以防止内存泄漏
+            setTimeout(() => {
+                bubble.remove();
+                createBubble(); // 创建新气泡保持数量
+            }, duration * 1000);
+        }
+        
+        // 创建庆祝彩花
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 10 + 5;
+                const posX = Math.random() * container.offsetWidth + container.offsetLeft;
+                const duration = Math.random() * 3 + 2;
+                const delay = Math.random();
+                
+                confetti.style.backgroundColor = color;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.left = `${posX}px`;
+                confetti.style.top = `${container.offsetTop}px`;
+                confetti.style.animation = `confetti-fall ${duration}s ease-in ${delay}s forwards`;
+                
+                // 随机形状
+                if (Math.random() > 0.5) {
+                    confetti.style.borderRadius = '50%';
+                } else {
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                }
+                
+                document.body.appendChild(confetti);
+                
+                // 动画结束后移除
+                setTimeout(() => {
+                    confetti.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+        
+        // 事件监听
+        checkBtn.addEventListener('click', checkAnswer);
+        newBtn.addEventListener('click', generateProblem);
+        answerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+        
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
